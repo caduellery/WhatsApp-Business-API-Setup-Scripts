@@ -1,3 +1,6 @@
+# ** This is a non maintaned fork for compatibility with M1 Macs **
+> Note: only [installation/docker-compose.yml](installation/docker-compose.yml) was modified for Apple M1.
+
 # WhatsApp Business API Setup Scripts  (English)
 
 This repository includes all configuration scripts used to set up WhatsApp Business API using docker-compose.

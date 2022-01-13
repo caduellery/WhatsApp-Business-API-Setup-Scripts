@@ -14,6 +14,7 @@ volumes:
 services:
   db:
     image: mysql:5.7.35
+    platform: linux/amd64
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: testpass
@@ -25,11 +26,13 @@ services:
         - "33060:3306"
     volumes:
      - mysqlData:/var/lib/mysql
-    network_mode: bridge
+    # network_mode: bridge
+    networks:
+      - wabiz
     cap_drop:
       - MKNOD
   wacore:
-    image: docker.whatsapp.biz/coreapp:v${WA_API_VERSION:?Run docker-compose with env var WA_API_VERSION (ex. WA_API_VERSION=2.37.1 docker-compose <command> <options>)}
+    image: docker.whatsapp.biz/coreapp:v${WA_API_VERSION}
     command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
     volumes:
      - whatsappMedia:/usr/local/wamedia
@@ -41,14 +44,24 @@ services:
       ORCHESTRATION: DOCKER-COMPOSE
     depends_on:
       - "db"
-    network_mode: bridge
+    # network_mode: bridge
+    networks:
+      - wabiz
     links:
       - db
     cap_drop:
       - MKNOD
   waweb:
-    image: docker.whatsapp.biz/web:v${WA_API_VERSION:?Run docker-compose with env var WA_API_VERSION (ex. WA_API_VERSION=2.37.1 docker-compose <command> <options>)}
-    command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
+    image: docker.whatsapp.biz/web:v${WA_API_VERSION}
+    command:
+      [
+        "sh", "-c",
+        "touch /var/log/whatsapp/web.log
+        && chmod 777 /var/log/whatsapp/web.log
+        && sed -i 's/  monitor_file.*/  tail -f \\/dev\\/null/g' /opt/whatsapp/bin/web_setup.sh
+        && /opt/whatsapp/bin/wait_on_mysql.sh
+        && /opt/whatsapp/bin/launch_within_docker.sh"
+      ]
     ports:
      - "9090:443"
     volumes:
@@ -66,6 +79,11 @@ services:
     links:
       - db
       - wacore
-    network_mode: bridge
+    # network_mode: bridge
+    networks:
+      - wabiz
     cap_drop:
       - MKNOD
+networks:
+  wabiz:
+    driver: bridge
